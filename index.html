@@ -1,0 +1,230 @@
+<html>
+  <head>
+    <title>Health Department</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='../HD_GIS/mapbox.js'></script>
+	<script src='../HD_GIS/jquery-1.11.1.js'></script>
+	<script src='../HD_GIS/nprogress.js'></script>
+	<script src='../HD_GIS/LHD.js'></script>
+	<script src='../HD_GIS/SHD.js'></script>
+	<link href='https://api.tiles.mapbox.com/mapbox.js/v1.6.4/mapbox.css' rel='stylesheet' />
+	<link href = '../HD_GIS/nprogress.css' rel='stylesheet' />
+	<link rel="shortcut icon" href='../HD_GIS/cehi.ico' />
+	
+	<style>
+		body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%;}
+		
+		.logoBox{
+			position:absolute;
+			left:2%;
+			bottom:3%;
+			visibility:visible;
+		}
+		
+		.legend label,
+		.legend span {
+			visibility:visible;
+			display:block;
+			text-align:right;
+			font-size:15px;
+			margin-top:5px;
+		 }
+		.legend{
+			visibility:visible;
+			position:absolute;
+			top:5%;
+			padding: 10px 10px 10px 10px;
+			right: 2%;
+			background:rgba(255, 255, 255, 0.5);
+			border-radius:5px;
+		}
+		.colors{
+			margin-top:8px;
+		}
+		.colors,  .labels{
+			text-align:center;
+		}
+		h1 {
+			font-size:130%;
+			margin:2px;
+		}
+		
+	</style>
+   </head>
+   <body>
+    <nav id='variables' class='menu-ui'></nav>
+    <div id='map'></div>
+	<div id='logo' class='logobox'><a href="http://cehi.snre.umich.edu" target = '_blank'><img class = 'logopng' src="../HD_GIS/LOGO.png" style="border: none; bottom: 10px; left: 10px"></a></div>
+	<div id='legendbox'>
+	  <nav class='legend clearfix'>
+	    <H1>Building GIS Capacity in State/Local Health Departments </br></strong> <label>ZoomIn to see details about Local HD</label>
+	</div>
+	
+	
+	<script>
+		//Layer Control
+		var layers = document.getElementById('menu-ui');
+		var closeTooltip;
+		
+        //Initialize Map Object
+		var map = L.mapbox.map('map', 'examples.map-i86nkdio', {  //'lruiyang.ieap3p3j'
+            accessToken: 'pk.eyJ1IjoibHJ1aXlhbmciLCJhIjoic0lZREI2VSJ9.ZEoYy45fcxMV6RBqseIWoQ',
+			minZoom: 3,
+            maxZoom: 17,
+        }).setView([39.414701, -96.860389], 4);
+		
+		
+		// Be nice and credit data source, American Fact Finder, NPPES.
+		map.attributionControl.addAttribution('Data Source: ' +
+		  '<a href="https://www.census.gov/geo/maps-data/data/tiger-line.html" target = \'_blank\'>US Census Bureau</a> and <a href="http://cehi.snre.umich.edu/projects/building-gis-capacity-state-health-departments" target = \'_blank\'>CEHI</a>');
+		
+		//Prepare for Pop_up
+		var popup = new L.Popup({ autoPan: false });
+		
+		
+		//Set Logo interaction to help User to redirect themselves to CEHI website 
+		$("#logo a img")
+		  .mouseover(function(){
+			$(this).attr('src', '../HD_GIS/LOGO_shadow.png');
+		  })
+		  .mouseleave(function(){
+			$(this).attr('src', '../HD_GIS/LOGO.png');
+		  });
+		
+		//Create Layer Object for State Health Department
+		shdlayer = L.geoJson(shd,  {
+						style: getStyle,
+						onEachFeature: onEachFeature
+					});
+		
+		//Create Layer Object for Local Health Department		
+		lhdlayer = L.geoJson(lhd,  {
+						style: getStyle,
+						onEachFeature: onEachFeature
+					});
+					
+		function getStyle(feature,defaultOptions) {	
+						return {
+							weight: 0.8,
+							opacity: 1,
+							color: getColor(feature.properties.Cohort),
+							width: 0.1,
+							fillOpacity: 0.5,
+							fillColor: getColor(feature.properties.Cohort)
+						};
+					}
+		
+		function getColor(d) {
+						return d == -1 ?  '#FFFFFF':
+							  '#ec7014';
+					}
+					
+		
+		function onEachFeature(feature, layer) {
+						layer.on({
+							mousemove: mousemove,
+							mouseout: mouseout,
+							click: zoomToFeature
+						});
+						
+						function mousemove(e) {
+							var layer = e.target;
+							if(layer._map.getZoom() <= 10){
+								popup.setLatLng(e.latlng);
+								if(layer.feature.properties.Cohort != -1){
+									popup.setContent('<div class="marker-title"> The <strong>' + layer.feature.properties.NAME + ' Health Department</strong> </br> has been trained in Cohort ' + layer.feature.properties.Cohort + '</div>');
+								} else{
+									popup.setContent('<div class="marker-title"> The <strong>' + layer.feature.properties.NAME + ' Health Department</strong> has not been trained yet!</div>');
+								}
+								if (!popup._map) popup.openOn(map);
+								window.clearTimeout(closeTooltip);
+							}
+							
+							// highlight feature
+							layer.setStyle({
+								weight: 3,
+								opacity: 0.3,
+								fillOpacity: 0.7
+							});
+
+							if (!L.Browser.ie && !L.Browser.opera) {
+								//layer.bringToFront();
+							}
+						}
+					
+						//Mouse out events need to Add all layers
+						function mouseout(e) {
+							if(map.hasLayer(shdlayer)){
+								shdlayer.resetStyle(e.target);
+								if(map.getZoom() > 5){
+									e.target.setStyle({
+										fillOpacity: 0.2
+									});
+								}
+							}
+							if(map.hasLayer(lhdlayer)){
+								lhdlayer.resetStyle(e.target);
+								if(map.getZoom() > 5){
+									e.target.setStyle({
+										fillOpacity: 0.2
+									});
+								}
+							}
+							if(layer._map.getZoom() <= 10){
+								closeTooltip = window.setTimeout(function() {
+									map.closePopup();
+								}, 100);
+							}
+						}	
+						
+						function zoomToFeature(e) {
+							if(layer._map.getZoom() > 10){
+								popup.setLatLng(e.latlng);
+								if(layer.feature.properties.Cohort != -1){
+									popup.setContent('<div class="marker-title"> The <strong>' + layer.feature.properties.NAME + ' Health Department</strong> </br> has been trained in Cohort ' + layer.feature.properties.Cohort + '</div>');
+								} else{
+									popup.setContent('<div class="marker-title"> The <strong>' + layer.feature.properties.NAME + ' Health Department</strong> has not been trained yet!</div>');
+								}
+								if (!popup._map) popup.openOn(map);
+								window.clearTimeout(closeTooltip);
+							} else {
+								map.fitBounds(e.target.getBounds());
+							}
+						}
+					}
+		
+		map.on('zoomend', function() {
+			if (!L.Browser.ie && !L.Browser.opera) {
+				if(map.getZoom() > 5){
+					lhdlayer.bringToFront();
+					lhdlayer.setStyle({
+						opacity: 1,
+						fillOpacity: 0.5
+					});
+					shdlayer.setStyle({
+						fillOpacity: 0.2
+					});
+				} else{
+					lhdlayer.setStyle({
+						opacity: 0.1,
+						fillOpacity: 0.1
+					});
+					shdlayer.bringToFront();
+					shdlayer.setStyle({
+						fillOpacity: 0.5
+					});
+				}
+			}
+		});
+		
+		map.addLayer(lhdlayer);		
+		map.addLayer(shdlayer);
+		lhdlayer.setStyle({
+						opacity: 0.1,
+						fillOpacity: 0.1
+					});
+		
+	
+    </script>
+   </body>
