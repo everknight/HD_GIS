@@ -58,7 +58,7 @@
 	<div id='logo' class='logobox'><a href="http://cehi.snre.umich.edu" target = '_blank'><img class = 'logopng' src="../HD_GIS/LOGO.png" style="border: none; bottom: 10px; left: 10px"></a></div>
 	<div id='legendbox'>
 	  <nav class='legend clearfix'>
-	    <H1>Building GIS Capacity in State/Local Health Departments </br></strong> <label>ZoomIn to see details about Local HD</label>
+	    <H1>Building GIS Capacity in State and Local Health Departments, Phase 1-7</br></strong> <label>Zoom In for Training Details</label>
 	</div>
 	
 	
@@ -67,13 +67,20 @@
 		var layers = document.getElementById('menu-ui');
 		var closeTooltip;
 		
-        //Initialize Map Object
+		var southWest = L.latLng(8, -260),
+                northEast = L.latLng(72, -5),
+                bounds = L.latLngBounds(southWest, northEast);
+
+
+       	 //Initialize Map Object
 		var map = L.mapbox.map('map', 'examples.map-i86nkdio', {  //'lruiyang.ieap3p3j'
-            accessToken: 'pk.eyJ1IjoibHJ1aXlhbmciLCJhIjoic0lZREI2VSJ9.ZEoYy45fcxMV6RBqseIWoQ',
-			minZoom: 3,
-            maxZoom: 17,
-        }).setView([39.414701, -96.860389], 4);
-		
+            		accessToken: 'pk.eyJ1IjoibHJ1aXlhbmciLCJhIjoic0lZREI2VSJ9.ZEoYy45fcxMV6RBqseIWoQ',
+					minZoom: 3,
+            				maxZoom: 17,
+					maxBounds:bounds
+        		}).setView([39.414701, -96.860389], 4);
+
+		////map.legendControl.addLegend(document.getElementById('legend').innerHTML);
 		
 		// Be nice and credit data source, American Fact Finder, NPPES.
 		map.attributionControl.addAttribution('Data Source: ' +
@@ -92,13 +99,11 @@
 			$(this).attr('src', '../HD_GIS/LOGO.png');
 		  });
 		
-		//Create Layer Object for State Health Department
 		shdlayer = L.geoJson(shd,  {
 						style: getStyle,
 						onEachFeature: onEachFeature
 					});
-		
-		//Create Layer Object for Local Health Department		
+					
 		lhdlayer = L.geoJson(lhd,  {
 						style: getStyle,
 						onEachFeature: onEachFeature
@@ -108,7 +113,7 @@
 						return {
 							weight: 0.8,
 							opacity: 1,
-							color: getColor(feature.properties.Cohort),
+							color: '#FFFFFF',
 							width: 0.1,
 							fillOpacity: 0.5,
 							fillColor: getColor(feature.properties.Cohort)
@@ -132,14 +137,28 @@
 							var layer = e.target;
 							if(layer._map.getZoom() <= 10){
 								popup.setLatLng(e.latlng);
-								if(layer.feature.properties.Cohort != -1){
-									popup.setContent('<div class="marker-title"> The <strong>' + layer.feature.properties.NAME + ' Health Department</strong> </br> has been trained in Cohort ' + layer.feature.properties.Cohort + '</div>');
-								} else{
-									popup.setContent('<div class="marker-title"> The <strong>' + layer.feature.properties.NAME + ' Health Department</strong> has not been trained yet!</div>');
+								var information;
+								if(layer.feature.properties.Cohort == -1){
+									information = "Not Trained";
+								} else if(layer.feature.properties.Cohort == 1){
+									information = "Trained 2009";
+								} else if(layer.feature.properties.Cohort == 2){
+									information = "Trained 2010";
+								} else if(layer.feature.properties.Cohort == 3){
+									information = "Trained 2011";
+								} else if(layer.feature.properties.Cohort == 4){
+									information = "Trained 2012";
+								} else if(layer.feature.properties.Cohort == 5){
+									information = "Trained 2013";
+								} else if(layer.feature.properties.Cohort == 6){
+									information = "Trained 2014";
+								} else if(layer.feature.properties.Cohort == 7){
+									information = "Ongoing Training 2015";
 								}
+
+								popup.setContent('<div class="marker-title">  <strong>' + layer.feature.properties.NAME + ' Health Department</strong> </br>' + information + '</div>');
 								if (!popup._map) popup.openOn(map);
-								window.clearTimeout(closeTooltip);
-							}
+								window.clearTimeout(closeTooltip);							}
 							
 							// highlight feature
 							layer.setStyle({
@@ -181,11 +200,23 @@
 						function zoomToFeature(e) {
 							if(layer._map.getZoom() > 10){
 								popup.setLatLng(e.latlng);
-								if(layer.feature.properties.Cohort != -1){
-									popup.setContent('<div class="marker-title"> The <strong>' + layer.feature.properties.NAME + ' Health Department</strong> </br> has been trained in Cohort ' + layer.feature.properties.Cohort + '</div>');
-								} else{
-									popup.setContent('<div class="marker-title"> The <strong>' + layer.feature.properties.NAME + ' Health Department</strong> has not been trained yet!</div>');
+								var information;
+								if(layer.feature.properties.Cohort == -1){
+									information = "Not Trained";
+								} else if(layer.feature.properties.Cohort == 1){
+									information = "Trained 2009";
+								} else if(layer.feature.properties.Cohort == 2){
+									information = "Trained 2010";
+								} else if(layer.feature.properties.Cohort == 3){
+									information = "Trained 2011";
+								} else if(layer.feature.properties.Cohort == 4){
+									information = "Trained 2012";
+								} else if(layer.feature.properties.Cohort == 5){
+									information = "Trained 2013";
+								} else if(layer.feature.properties.Cohort == 6){
+									information = "Trained 2014";
 								}
+								popup.setContent('<div class="marker-title">  <strong>' + layer.feature.properties.NAME + ' Health Department</strong> </br>' + information + '</div>');
 								if (!popup._map) popup.openOn(map);
 								window.clearTimeout(closeTooltip);
 							} else {
